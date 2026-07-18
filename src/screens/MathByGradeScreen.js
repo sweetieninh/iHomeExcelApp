@@ -29,7 +29,7 @@ function splitIntoColumns(list, columns) {
   return bucket.filter((group) => group.length > 0);
 }
 
-export default function MathByGradeScreen({ onBack }) {
+export default function MathByGradeScreen({ onBack, displayName, onOpenSkillExercise }) {
   const [selectedGradeCode, setSelectedGradeCode] = useState('P');
   const [gradePayload, setGradePayload] = useState({ sections: [], title: 'Math skills' });
   const [loading, setLoading] = useState(false);
@@ -68,6 +68,7 @@ export default function MathByGradeScreen({ onBack }) {
       <View style={styles.topBannerPlaceholder}>
         <Text style={styles.placeholderTitle}>Top Banner Placeholder</Text>
         <Text style={styles.placeholderText}>Brand/logo, promo, and account widgets will go here.</Text>
+        <Text style={styles.signedInText}>Signed in as: {displayName || 'Guest'}</Text>
       </View>
 
       <View style={styles.topMenuPlaceholder}>
@@ -117,15 +118,25 @@ export default function MathByGradeScreen({ onBack }) {
                         <Text style={styles.sectionHeader}>
                           {section.id}. {section.title}
                         </Text>
-                        {section.skills.map((skill, skillIndex) => (
+                        {section.skills.map((skill, skillIndex) => {
+                          const canOpenExercise = selectedGradeCode === '1' && section.id === 'G' && skill === 'Add two numbers';
+
+                          return (
                           <View key={`${section.id}-${skillIndex}`} style={styles.skillRow}>
                             <Text style={styles.skillIndex}>{skillIndex + 1}.</Text>
-                            <Text style={styles.skillItem}>{skill}</Text>
+                            {canOpenExercise ? (
+                              <Pressable onPress={onOpenSkillExercise}>
+                                <Text style={[styles.skillItem, styles.skillLink]}>{skill}</Text>
+                              </Pressable>
+                            ) : (
+                              <Text style={styles.skillItem}>{skill}</Text>
+                            )}
                             <View style={styles.skillMarkerWrap}>
                               <Text style={styles.skillMarker}>i</Text>
                             </View>
                           </View>
-                        ))}
+                          );
+                        })}
                       </View>
                     ))}
                   </View>
@@ -187,6 +198,12 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#5f7a56',
     fontSize: 12,
+  },
+  signedInText: {
+    color: '#2c5a20',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 6,
   },
   contentShell: {
     flex: 1,
@@ -309,6 +326,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     flex: 1,
+  },
+  skillLink: {
+    color: '#178dc6',
+    textDecorationLine: 'underline',
+    fontWeight: '700',
   },
   skillMarkerWrap: {
     marginLeft: 4,
