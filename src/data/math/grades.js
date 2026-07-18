@@ -1,0 +1,17 @@
+export const MATH_GRADES = [
+  { code: 'P', label: 'PreK' },
+  { code: 'K', label: 'Kindergarten' },
+  { code: '1', label: '1st Grade' },
+  { code: '2', label: '2nd Grade' },
+  { code: '3', label: '3rd Grade' },
+  { code: '4', label: '4th Grade' },
+  { code: '5', label: '5th Grade' },
+  { code: '6', label: '6th Grade' },
+  { code: '7', label: '7th Grade' },
+  { code: '8', label: '8th Grade' },
+  { code: 'A1', label: 'Algebra 1' },
+  { code: 'G', label: 'Geometry' },
+  { code: 'A2', label: 'Algebra 2' },
+  { code: 'PC', label: 'PreCalculus' },
+  { code: 'C', label: 'Calculus' },
+];
