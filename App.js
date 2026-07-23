@@ -22,9 +22,11 @@ const API_BASE_URL =
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('roleSelect');
+  const [selectedGradeCode, setSelectedGradeCode] = useState('P');
   const [username, setUsername] = useState('emma.smith');
   const [password, setPassword] = useState('1234');
   const [displayName, setDisplayName] = useState('');
+  const [authToken, setAuthToken] = useState('');
   const [authError, setAuthError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
@@ -38,21 +40,22 @@ export default function App() {
     setAuthError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/student-login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier: username, password }),
       });
 
       const payload = await response.json();
 
-      if (!response.ok || !payload.ok) {
+      if (!response.ok || !payload.success) {
         throw new Error(payload.message || 'Login failed');
       }
 
-      setDisplayName(payload.displayName || username);
+      setAuthToken(payload.data.accessToken || '');
+      setDisplayName(payload.data.user?.displayName || username);
       setCurrentScreen('mathByGrade');
     } catch (error) {
       setAuthError(error.message || 'Unable to login.');
@@ -140,12 +143,22 @@ export default function App() {
 
   function renderCurrentScreen() {
     if (currentScreen === 'skillExercise') {
-      return <SkillExerciseScreen onBack={() => setCurrentScreen('mathByGrade')} />;
+      return (
+        <SkillExerciseScreen
+          apiBaseUrl={API_BASE_URL}
+          authToken={authToken}
+          onBack={() => setCurrentScreen('mathByGrade')}
+        />
+      );
     }
 
     if (currentScreen === 'mathByGrade') {
       return (
         <MathByGradeScreen
+          apiBaseUrl={API_BASE_URL}
+          authToken={authToken}
+          selectedGradeCode={selectedGradeCode}
+          onSelectedGradeChange={setSelectedGradeCode}
           displayName={displayName}
           onBack={() => setCurrentScreen('roleSelect')}
           onOpenSkillExercise={() => setCurrentScreen('skillExercise')}

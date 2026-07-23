@@ -29,10 +29,18 @@ function splitIntoColumns(list, columns) {
   return bucket.filter((group) => group.length > 0);
 }
 
-export default function MathByGradeScreen({ onBack, displayName, onOpenSkillExercise }) {
-  const [selectedGradeCode, setSelectedGradeCode] = useState('P');
+export default function MathByGradeScreen({
+  onBack,
+  displayName,
+  onOpenSkillExercise,
+  apiBaseUrl,
+  authToken,
+  selectedGradeCode,
+  onSelectedGradeChange,
+}) {
   const [gradePayload, setGradePayload] = useState({ sections: [], title: 'Math skills' });
   const [loading, setLoading] = useState(false);
+  const [addTwoNumbersPoints, setAddTwoNumbersPoints] = useState(null);
   const { width } = useWindowDimensions();
 
   const selectedGrade = useMemo(
@@ -58,6 +66,52 @@ export default function MathByGradeScreen({ onBack, displayName, onOpenSkillExer
       active = false;
     };
   }, [selectedGradeCode]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSkillPoints() {
+      if (!authToken || !apiBaseUrl) {
+        setAddTwoNumbersPoints(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/students/me/skills/math-g1-add-001/progress`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (!active) {
+          return;
+        }
+
+        if (response.status === 404) {
+          setAddTwoNumbersPoints(null);
+          return;
+        }
+
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          setAddTwoNumbersPoints(null);
+          return;
+        }
+
+        setAddTwoNumbersPoints(payload.data.currentPoints ?? null);
+      } catch (error) {
+        if (active) {
+          setAddTwoNumbersPoints(null);
+        }
+      }
+    }
+
+    loadSkillPoints();
+
+    return () => {
+      active = false;
+    };
+  }, [apiBaseUrl, authToken]);
 
   const stacked = width < 900;
   const columns = stacked ? 1 : selectedGradeCode === '1' ? 4 : 3;
@@ -90,7 +144,7 @@ export default function MathByGradeScreen({ onBack, displayName, onOpenSkillExer
               const active = item.code === selectedGradeCode;
               return (
                 <Pressable
-                  onPress={() => setSelectedGradeCode(item.code)}
+                  onPress={() => onSelectedGradeChange(item.code)}
                   style={[styles.gradeTab, active && styles.gradeTabActive]}
                 >
                   <Text style={[styles.gradeTabCode, active && styles.gradeTabCodeActive]}>{item.code}</Text>
@@ -120,16 +174,19 @@ export default function MathByGradeScreen({ onBack, displayName, onOpenSkillExer
                         </Text>
                         {section.skills.map((skill, skillIndex) => {
                           const canOpenExercise = selectedGradeCode === '1' && section.id === 'G' && skill === 'Add two numbers';
+                          const skillLabel = canOpenExercise && addTwoNumbersPoints !== null
+                            ? `${skill} (${addTwoNumbersPoints})`
+                            : skill;
 
                           return (
                           <View key={`${section.id}-${skillIndex}`} style={styles.skillRow}>
-                            <Text style={styles.skillIndex}>{skillIndex + 1}.</Text>
+                            <Text style={styles.skillIndex}>{`${skillIndex + 1}. `}</Text>
                             {canOpenExercise ? (
                               <Pressable onPress={onOpenSkillExercise}>
-                                <Text style={[styles.skillItem, styles.skillLink]}>{skill}</Text>
+                                <Text style={[styles.skillItem, styles.skillLink]}>{skillLabel}</Text>
                               </Pressable>
                             ) : (
-                              <Text style={styles.skillItem}>{skill}</Text>
+                              <Text style={styles.skillItem}>{skillLabel}</Text>
                             )}
                             <View style={styles.skillMarkerWrap}>
                               <Text style={styles.skillMarker}>i</Text>
@@ -316,7 +373,7 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   skillIndex: {
-    width: 14,
+    width: 18,
     fontSize: 11,
     lineHeight: 16,
     color: '#5f7756',
